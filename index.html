@@ -1,82 +1,129 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glosor</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glosförhör</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --border: #cbd5e1;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 800px; margin: 0 auto; }
+
+    header { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    input[type="text"], select, button { padding: 10px 14px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; }
+    button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600; }
+    button:hover { background: var(--primary-hover); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-sec { background: #e2e8f0; color: var(--text); }
+    .btn-sec:hover { background: #cbd5e1; }
+
+    /* Redigeringsvy & Linje */
+    #pane { position: relative; display: flex; height: 320px; border: 1px solid var(--border); border-radius: 8px; background: #fff; overflow: hidden; margin-bottom: 15px; }
+    #gut { width: 45px; background: #f1f5f9; border-right: 1px solid var(--border); overflow: hidden; font-family: monospace; font-size: 14px; color: #94a3b8; text-align: right; padding: 12px 8px; user-select: none; }
+    #t { flex: 1; border: none; resize: none; outline: none; font-family: monospace; font-size: 14px; line-height: 1.5; padding: 12px; white-space: pre; overflow-x: auto; }
+    #tint { position: absolute; top: 0; bottom: var(--sb, 0px); right: 0; background: rgba(37, 99, 235, 0.04); pointer-events: none; }
+    #split { position: absolute; top: 0; bottom: var(--sb, 0px); width: 4px; background: var(--primary); cursor: col-resize; z-index: 10; }
+    #split.drag { background: #1e40af; }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; }
+    #warn { color: var(--danger); font-size: 14px; margin-bottom: 15px; min-height: 20px; }
+
+    /* Plugga-vy */
+    #study { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    .study-bar { display: flex; width: 100%; justify-content: space-between; align-items: center; }
+    #card { width: 100%; min-height: 220px; background: var(--card-bg); border: 2px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; cursor: pointer; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    #lab { font-size: 14px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    #face { font-size: 28px; font-weight: 700; }
+
+    #grade { display: flex; gap: 15px; width: 100%; }
+    #grade button { flex: 1; padding: 15px; font-size: 16px; }
+    #no { background: var(--danger); }
+    #yes { background: var(--success); }
+
+    #spell { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    #ans { width: 100%; font-size: 18px; text-align: center; }
+    #fb { font-size: 16px; font-weight: 600; text-align: center; min-height: 24px; }
+    #fb.ok { color: var(--success); }
+    #fb.bad { color: var(--danger); }
+  </style>
 </head>
 <body>
 
-<main id="edit">
-  <div class="top">
-    <h1>Glosor</h1>
-    <a class="btn" href="hjalp.html" target="_blank" rel="noopener">Hjälp</a>
-  </div>
-  <p class="hint">Klistra in alla glosor i rutan, en glosa per rad med orden bredvid varandra. Dra den röda linjen så att ett språk hamnar till vänster och det andra till höger. Ny rad görs bara med Enter. Du kan också ladda upp en Excelfil med glosorna i två kolumner, så startar förhöret direkt, eller en bild på en gloslista som läses av.</p>
+  <!-- REDIGERINGSVY -->
+  <div id="edit">
+    <header>
+      <input type="text" id="n1" placeholder="Språk 1" value="Svenska">
+      <input type="text" id="n2" placeholder="Språk 2" value="Engelska">
+      <button id="upload" class="btn-sec">Ladda upp Excel</button>
+      <button id="imgbtn" class="btn-sec">Ladda upp Bild</button>
+      
+      <!-- Dolda inputs för filuppladdning -->
+      <input type="file" id="file" accept=".xlsx,.csv" style="display: none;">
+      <input type="file" id="img" accept="image/*" style="display: none;">
+    </header>
 
-  <div class="names">
-    <input class="lang" id="n1" value="Svenska" aria-label="Namn på språket till vänster om linjen">
-    <input class="lang" id="n2" value="Engelska" aria-label="Namn på språket till höger om linjen">
-  </div>
-
-  <div class="editor">
-    <div class="gutter" id="gut" aria-hidden="true"><div>1</div></div>
-    <div class="pane" id="pane">
-      <textarea id="t" wrap="off" spellcheck="false" aria-label="Alla glosor, en per rad" placeholder="Klistra in glosor här, till exempel:&#10;hund      dog&#10;katt      cat"></textarea>
+    <div id="pane">
+      <div id="gut"><div>1</div></div>
+      <textarea id="t" spellcheck="false" placeholder="Skriv glosor här eller ladda upp en fil..."></textarea>
       <div id="tint"></div>
-      <div id="split" role="separator" aria-orientation="vertical" aria-label="Linje mellan språken. Flytta med piltangenterna." tabindex="0"></div>
+      <div id="split" role="slider" aria-label="Kolumndelare"></div>
+    </div>
+
+    <div id="warn"></div>
+
+    <div class="controls">
+      <span id="c">0 glosor</span>
+      <button id="start" disabled>Börja plugga</button>
     </div>
   </div>
-  <p class="count" id="c"></p>
 
-  <div class="bar">
-    <span id="warn" role="status"></span>
-    <span class="tools">
-      <button id="upload" type="button">Ladda upp Excel</button>
-      <button id="imgbtn" type="button">Ladda upp bild</button>
-      <button id="start" class="primary">Börja plugga</button>
-    </span>
-  </div>
-  <input type="file" id="file" hidden accept=".xlsx,.csv,.tsv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Excelfil med glosor">
-  <input type="file" id="img" hidden accept="image/*" aria-label="Bild på en gloslista">
-</main>
+  <!-- PLUGGA-VY -->
+  <div id="study" hidden>
+    <div class="study-bar">
+      <button id="back" class="btn-sec">← Tillbaka</button>
+      <span id="prog">0 kvar</span>
+      <div>
+        <select id="mode">
+          <option value="cards">Kort</option>
+          <option value="spell">Stava</option>
+        </select>
+        <select id="alang" hidden></select>
+        <button id="swap" class="btn-sec">Byt håll</button>
+        <button id="shuffle" class="btn-sec">Blanda</button>
+      </div>
+    </div>
 
-<main id="study" hidden>
-  <div class="bar">
-    <button id="back">Redigera glosor</button>
-    <span id="prog"></span>
-    <span class="tools">
-      <select id="mode" aria-label="Läge">
-        <option value="card">Kort</option>
-        <option value="spell">Stava</option>
-      </select>
-      <select id="alang" aria-label="Språk att skriva på" hidden></select>
-      <button id="swap">Byt håll</button>
-      <button id="shuffle">Blanda om</button>
-      <a class="btn" href="hjalp.html" target="_blank" rel="noopener">Hjälp</a>
-    </span>
-  </div>
+    <div id="card" tabindex="0">
+      <div id="lab"></div>
+      <div id="face"></div>
+    </div>
 
-  <button id="card" class="card" aria-live="polite">
-    <span id="lab"></span>
-    <span id="face"></span>
-  </button>
+    <!-- Svarsknappar för Kortläge -->
+    <div id="grade">
+      <button id="no">Kan ej</button>
+      <button id="yes">Rätt</button>
+    </div>
 
-  <div class="bar" id="grade">
-    <button id="no">Kunde inte</button>
-    <span class="hint">Tryck Enter eller klicka på kortet för att vända det. Pil vänster/höger svarar.</span>
-    <button id="yes" class="primary">Kunde</button>
+    <!-- Textfält för Skrivläge -->
+    <div id="spell" hidden>
+      <input type="text" id="ans" placeholder="Skriv svaret här..." autocomplete="off">
+      <button id="check">Kontrollera</button>
+      <div id="fb"></div>
+    </div>
   </div>
 
-  <div id="spell" hidden>
-    <input id="ans" placeholder="Skriv svaret här" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Skriv översättningen här">
-    <button id="check" class="primary">Kontrollera</button>
-    <p id="fb" role="status"></p>
-  </div>
-</main>
-
-<script src="script.js"></script>
+  <!-- Inläsning av JavaScript-filer -->
+  <script src="script.js"></script>
 </body>
 </html>
