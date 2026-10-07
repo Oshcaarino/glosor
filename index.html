@@ -19,8 +19,19 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 800px; margin: 0 auto; }
 
-    header { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-    input[type="text"], select, button { padding: 10px 14px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; }
+    header { display: flex; gap: 10px; margin-bottom: 15px; }
+    header input[type="text"] { flex: 1; padding: 10px 14px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; font-weight: 600; }
+
+    /* Redigeringsvy med två rutor */
+    #panes { display: flex; gap: 15px; margin-bottom: 15px; }
+    .box { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    textarea { width: 100%; height: 320px; padding: 12px; font-family: monospace; font-size: 14px; line-height: 1.5; border: 1px solid var(--border); border-radius: 8px; resize: vertical; outline: none; white-space: pre; }
+    textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; }
+    #warn { color: var(--danger); font-size: 14px; margin-bottom: 15px; min-height: 20px; }
+
+    button, select { padding: 10px 14px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; }
     button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600; }
     button:hover { background: var(--primary-hover); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -28,33 +39,9 @@
     .btn-sec { background: #e2e8f0; color: var(--text); }
     .btn-sec:hover { background: #cbd5e1; }
 
-    /* Redigeringsvy & Linje */
-    #pane { position: relative; display: flex; height: 320px; border: 1px solid var(--border); border-radius: 8px; background: #fff; overflow: hidden; margin-bottom: 15px; }
-    #gut { width: 45px; background: #f1f5f9; border-right: 1px solid var(--border); overflow: hidden; font-family: monospace; font-size: 14px; color: #94a3b8; text-align: right; padding: 12px 8px; user-select: none; }
-    #t { flex: 1; border: none; resize: none; outline: none; font-family: monospace; font-size: 14px; line-height: 1.5; padding: 12px; white-space: pre; overflow-x: auto; }
-    #tint { position: absolute; top: 0; bottom: var(--sb, 0px); right: 0; background: rgba(37, 99, 235, 0.04); pointer-events: none; }
-    
-    /* Flyttbar röda/blå linje */
-    #split { 
-      position: absolute; 
-      top: 0; 
-      bottom: var(--sb, 0px); 
-      width: 10px; 
-      margin-left: -5px; 
-      background: var(--primary); 
-      cursor: col-resize; 
-      z-index: 10; 
-      touch-action: none; 
-      user-select: none; 
-    }
-    #split.drag { background: #1e40af; }
-
-    .controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; }
-    #warn { color: var(--danger); font-size: 14px; margin-bottom: 15px; min-height: 20px; }
-
     /* Plugga-vy */
     #study { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-    .study-bar { display: flex; width: 100%; justify-content: space-between; align-items: center; }
+    .study-bar { display: flex; width: 100%; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     #card { width: 100%; min-height: 220px; background: var(--card-bg); border: 2px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; cursor: pointer; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     #lab { font-size: 14px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
     #face { font-size: 28px; font-weight: 700; }
@@ -78,14 +65,15 @@
     <header>
       <input type="text" id="n1" placeholder="Språk 1" value="Svenska">
       <input type="text" id="n2" placeholder="Språk 2" value="Engelska">
-      <button id="centerBtn" type="button" class="btn-sec">Centrera linjen</button>
     </header>
 
-    <div id="pane">
-      <div id="gut"><div>1</div></div>
-      <textarea id="t" spellcheck="false" placeholder="Skriv glosor här, till exempel:&#10;hund    dog&#10;katt    cat"></textarea>
-      <div id="tint"></div>
-      <div id="split" role="slider" aria-label="Kolumndelare" tabindex="0"></div>
+    <div id="panes">
+      <div class="box">
+        <textarea id="t1" spellcheck="false" placeholder="Skriv på språk 1:&#10;hund&#10;katt"></textarea>
+      </div>
+      <div class="box">
+        <textarea id="t2" spellcheck="false" placeholder="Skriv på språk 2:&#10;dog&#10;cat"></textarea>
+      </div>
     </div>
 
     <div id="warn"></div>
