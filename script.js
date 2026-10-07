@@ -6,7 +6,9 @@
     backBtn = $('back'), prog = $('prog'), modeSel = $('mode'), alang = $('alang'),
     swapBtn = $('swap'), shuffleBtn = $('shuffle'), card = $('card'), lab = $('lab'),
     face = $('face'), grade = $('grade'), noBtn = $('no'), yesBtn = $('yes'),
-    spellBox = $('spell'), ans = $('ans'), checkBtn = $('check'), fb = $('fb');
+    spellBox = $('spell'), ans = $('ans'), checkBtn = $('check'), fb = $('fb'),
+    fileIn = $('file'), uploadBtn = $('upload'), imgIn = $('img'), imgBtn = $('imgbtn'),
+    centerBtn = $('centerBtn');
 
   const KEY = 'glosor', PAD = 12;
   let col = 12;                       // linjens läge, i tecken från vänsterkanten
@@ -68,7 +70,7 @@
   function update() {
     const n = ta.value.split('\n').length;
     gutIn.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
-    const sb = ta.offsetHeight - ta.clientHeight;   // höjden på sidledsrullningslisten
+    const sb = ta.offsetHeight - ta.clientHeight;
     pane.style.setProperty('--sb', sb + 'px');
     gutIn.style.paddingBottom = PAD + sb + 'px';
     gut.scrollTop = ta.scrollTop;
@@ -85,13 +87,48 @@
     if (c !== col) { col = c; update(); }
   }
 
+  /* ---------- Centrera linjen automatisk ---------- */
+  function centerLine() {
+    const lines = ta.value.split('\n').filter(l => l.trim());
+    if (!lines.length) {
+      setCol(12);
+      return;
+    }
+
+    let maxLeft = 0;
+    let minRight = Infinity;
+
+    lines.forEach(l => {
+      let m = /^(\S.*?)\s{2,}(\S.*)$/.exec(l);
+      if (!m) m = /^(\S+)\s+(\S.*)$/.exec(l);
+
+      if (m) {
+        const leftLen = m[1].length;
+        const rightStart = l.length - m[2].length;
+        maxLeft = Math.max(maxLeft, leftLen);
+        minRight = Math.min(minRight, rightStart);
+      }
+    });
+
+    if (maxLeft > 0 && minRight < Infinity && minRight > maxLeft) {
+      setCol(Math.floor((maxLeft + minRight) / 2));
+    } else if (maxLeft > 0) {
+      setCol(maxLeft + 2);
+    } else {
+      setCol(12);
+    }
+  }
+
+  if (centerBtn) {
+    centerBtn.addEventListener('click', centerLine);
+  }
+
   const expand = l => {
     let o = '';
     for (const ch of l) o += ch === '\t' ? ' '.repeat(8 - (o.length % 8)) : ch;
     return o;
   };
 
-  // Gissar var linjen ska sitta när man klistrar in i en tom ruta
   function guess(lines) {
     let minR = Infinity;
     for (const l of lines) {
@@ -104,7 +141,7 @@
         if (m) minR = Math.min(minR, m[1].length + m[2].length);
       }
     }
-    return minR === Infinity ? null : Math.max(1, minR - 1);   // linjen i mellanrummet, strax före högerspråket
+    return minR === Infinity ? null : Math.max(1, minR - 1);
   }
 
   ta.addEventListener('paste', e => {
@@ -113,10 +150,10 @@
     e.preventDefault();
     const wasEmpty = !ta.value.trim();
     let lines = raw.replace(/\r\n?/g, '\n').replace(/\n+$/, '').split('\n');
-    if (lines.some(l => l.includes('\t'))) {          // Excel, Kalkylark: tabbar mellan kolumnerna
+    if (lines.some(l => l.includes('\t'))) {
       const rows = lines.map(l => l.split('\t'));
       const w = Math.max(...rows.map(r => r[0].length));
-      const start = wasEmpty || w >= col ? w + 3 : col + 1;   // högerspråket börjar strax efter linjen
+      const start = wasEmpty || w >= col ? w + 3 : col + 1;
       lines = rows.map(r => (r.length < 2 ? r[0] : r[0].padEnd(start) + r.slice(1).join(' ').trim()));
       if (wasEmpty) col = start - 1;
     } else {
@@ -150,6 +187,7 @@
     setCol(Math.round((x + ta.scrollLeft - PAD) / charW()));
   });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => split.addEventListener(t, endDrag));
+  
   // Flytta linjen med piltangenterna
   split.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') { e.preventDefault(); setCol(col - 1); }
@@ -168,7 +206,7 @@
     return a;
   };
   const deal = () => { queue = shuffleArr(all.slice()); total = queue.length; };
-  const later = c => queue.splice(Math.min(queue.length, 4), 0, c);   // kortet kommer tillbaka lite senare
+  const later = c => queue.splice(Math.min(queue.length, 4), 0, c);
   const focusMain = () => { if (spelling()) ans.focus(); else card.focus({ preventScroll: true }); };
 
   function render() {
@@ -176,7 +214,7 @@
     flipped = false; waiting = false;
     card.classList.remove('flipped');
     grade.hidden = sp; spellBox.hidden = !sp; alang.hidden = !sp;
-    alang.value = String(1 - q);                       // språket man skriver på
+    alang.value = String(1 - q);
     prog.textContent = `${queue.length} kvar av ${total}`;
     yesBtn.disabled = noBtn.disabled = !cur;
     ans.value = ''; ans.readOnly = false; ans.disabled = !cur;
@@ -217,7 +255,7 @@
 
   function submit() {
     if (!spelling() || !queue.length) return;
-    if (waiting) {                                      // visade rätt svar, gå vidare
+    if (waiting) {
       later(queue.shift());
       render(); ans.focus();
       return;
@@ -252,7 +290,6 @@
     if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(); }
   });
 
-  // Enter vänder kortet, pilarna svarar. Knappar och fält sköter Enter själva.
   document.addEventListener('keydown', e => {
     if (study.hidden || spelling() || e.ctrlKey || e.metaKey || e.altKey) return;
     const tag = e.target.tagName;
@@ -262,15 +299,12 @@
   });
 
   /* ---------- Ladda upp Excel (.xlsx) eller CSV ---------- */
-  // Filen läses helt i webbläsaren och skickas inte någonstans.
-  const fileIn = $('file'), uploadBtn =$('upload');
   const fail = m => { throw Object.assign(new Error(m), { user: true }); };
   const tags = (el, name) => Array.from(el.querySelectorAll ? el.querySelectorAll(name) : el.getElementsByTagNameNS('*', name));
   const xml = s => new DOMParser().parseFromString(s, 'text/xml');
   const colNo = ref => ref.replace(/[^A-Za-z]/g, '').toUpperCase().split('').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
   const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
 
-  // En .xlsx är en zip-fil: läs filkatalogen och packa upp det som behövs
   function unzip(buf) {
     const dv = new DataView(buf), u8 = new Uint8Array(buf), files = {};
     let e = u8.length - 22;
@@ -297,7 +331,6 @@
     };
   }
 
-  // Första bladet i arbetsboken, som rader av celler
   async function readXlsx(buf) {
     const read = unzip(buf);
     const wb = await read('xl/workbook.xml');
@@ -331,7 +364,6 @@
     return Array.from(rows, r => r || []);
   }
 
-  // CSV/TSV med citattecken; avgränsaren (; tabb eller ,) gissas från första raden
   function readCsv(text) {
     text = text.replace(/^\uFEFF/, '');
     const first = text.split(/\r?\n/, 1)[0];
@@ -355,13 +387,11 @@
     return rows;
   }
 
-  // Excel-csv från svenska Windows är ofta ANSI (windows-1252), inte UTF-8
   const decode = buf => {
     try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
     catch (e) { return new TextDecoder('windows-1252').decode(buf); }
   };
 
-  // Första raden räknas som rubriker om båda cellerna ser ut som språknamn
   const HDR = /^(svenska|engelska|tyska|franska|spanska|italienska|latin|finska|danska|norska|isländska|ryska|polska|portugisiska|holländska|nederländska|grekiska|turkiska|arabiska|kinesiska|japanska|koreanska|swedish|english|german|french|spanish|italian|danish|norwegian|finnish|dutch|portuguese|russian|språk ?\d*|language ?\d*|ord|word|glosa|glosor|översättning|translation|fråga|svar|question|answer)$/i;
 
   function fromRows(raw, auto = true) {
@@ -369,7 +399,7 @@
     const cols = [];
     rows.forEach(r => r.forEach((v, i) => { if (v && !cols.includes(i)) cols.push(i); }));
     cols.sort((x, y) => x - y);
-    const [a, b] = cols;                              // de två första kolumnerna med innehåll
+    const [a, b] = cols;
     const data = rows.map(r => [r[a] || '', b === undefined ? '' : r[b] || '']).filter(r => r[0] || r[1]);
     if (data.length && HDR.test(data[0][0]) && HDR.test(data[0][1])) {
       const h = data.shift();
@@ -382,7 +412,7 @@
     ta.scrollTop = ta.scrollLeft = 0;
     update();
     const { pairs, problem } = parse();
-    if (auto && !problem && pairs.length) begin();    // inga fel: starta förhöret direkt (inte för bilder)
+    if (auto && !problem && pairs.length) begin();
   }
 
   async function loadFile(f) {
@@ -403,7 +433,7 @@
     const f = fileIn.files[0];
     if (f) loadFile(f).finally(() => { fileIn.value = ''; });
   });
-  // Dra en fil och släpp den var som helst på sidan
+
   document.addEventListener('dragover', e => {
     if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) e.preventDefault();
   });
@@ -415,9 +445,7 @@
     if (isImage(f)) loadImage(f); else loadFile(f);
   });
 
-  /* ---------- Ladda upp bild (textläsning med Tesseract.js) ---------- */
-  // Textläsaren hämtas först när man laddar upp en bild. Själva bilden lämnar aldrig webbläsaren.
-  const imgIn = $('img'), imgBtn =$('imgbtn');
+  /* ---------- Bildläsning (Tesseract.js) ---------- */
   const TESS = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
   const OCR_LANG = { svenska: 'swe', engelska: 'eng', tyska: 'deu', franska: 'fra', spanska: 'spa', italienska: 'ita', latin: 'lat', finska: 'fin', danska: 'dan', norska: 'nor', portugisiska: 'por', holländska: 'nld', nederländska: 'nld', polska: 'pol', ryska: 'rus', turkiska: 'tur' };
   const isImage = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name);
@@ -438,7 +466,6 @@
     im.src = url;
   });
 
-  // Hur mycket texten lutar, i grader (plus = nedåt åt höger). Raderna är som skarpast när lutningen är rätt.
   function skew(g, w, h) {
     const st = Math.max(1, Math.round(w / 700)), pts = [];
     for (let y = 0; y < h; y += st) for (let x = 0; x < w; x += st) if (g[y * w + x] < 110) pts.push(x / st, y / st);
@@ -458,7 +485,6 @@
     return best;
   }
 
-  // Jämnar ut skuggor (pappret blir vitt) och rätar upp lutande text, så att textläsaren får en ren bild
   function enhance(c) {
     const w = c.width, h = c.height, ctx = c.getContext('2d');
     const px = ctx.getImageData(0, 0, w, h), d = px.data, g = new Uint8ClampedArray(w * h);
@@ -488,7 +514,6 @@
     return out;
   }
 
-  // Skalar ner stora mobilfoton (och upp små bilder): textläsaren vill ha ungefär 1600–2000 px
   async function prepImage(f) {
     const im = await loadPicture(f);
     const longest = Math.max(im.naturalWidth, im.naturalHeight);
@@ -506,13 +531,11 @@
     return out;
   };
 
-  // Ord med placering -> rader med [vänster, höger]. Alla rader "röstar" fram var kolumnerna delas.
-  // Rader som inte passar in (rubriker, sidnummer) hoppas över och räknas.
   function rowsFromWords(raw) {
     const ws = raw.map(w => ({ t: clean(w.text), x0: w.bbox.x0, x1: w.bbox.x1, yc: (w.bbox.y0 + w.bbox.y1) / 2, h: w.bbox.y1 - w.bbox.y0, c: w.confidence }))
       .filter(w => w.t && w.c >= 30);
     if (!ws.length) fail('Hittade ingen text i bilden. Prova en skarpare bild med tryckt text.');
-    const H = median(ws.map(w => w.h)), MIN = 0.7 * H;      // kolumnluckan måste vara tydligt bredare än ett vanligt ordmellanrum
+    const H = median(ws.map(w => w.h)), MIN = 0.7 * H;
     const lines = [];
     ws.sort((a, b) => a.yc - b.yc).forEach(w => {
       const l = lines[lines.length - 1];
@@ -521,8 +544,8 @@
     });
     lines.forEach(l => {
       l.w.sort((a, b) => a.x0 - b.x0);
-      if (l.w.length > 2 && /^[^\p{L}\p{N}]{1,3}$/u.test(l.w[0].t)) l.w.shift();   // punkt före raden
-      if (l.w.length > 2 && /^\d{1,3}[.)]?$/.test(l.w[0].t)) l.w.shift();          // radnummer
+      if (l.w.length > 2 && /^[^\p{L}\p{N}]{1,3}$/u.test(l.w[0].t)) l.w.shift();
+      if (l.w.length > 2 && /^\d{1,3}[.)]?$/.test(l.w[0].t)) l.w.shift();
     });
     const gapsOf = l => {
       const g = [];
@@ -534,18 +557,17 @@
     all.flat().forEach(g => {
       const x = (g.a + g.b) / 2, cover = all.map(gs => gs.find(q => q.a < x && x < q.b)).filter(Boolean);
       const score = cover.length * 1e6 + cover.reduce((s, q) => s + q.b - q.a, 0);
-      if (!best || score > best.score) best = { score, n: cover.length, x: (Math.max(...cover.map(q => q.a)) + Math.min(...cover.map(q => q.b))) / 2 };   // mitt i den gemensamma luckan
+      if (!best || score > best.score) best = { score, n: cover.length, x: (Math.max(...cover.map(q => q.a)) + Math.min(...cover.map(q => q.b))) / 2 };
     });
     const bx = best && best.n >= 2 && best.n >= 0.4 * lines.filter(l => l.w.length > 1).length ? best.x : null;
-    const SEP = /^[-–—‒=:→|_~]+$/;                                                   // hund - dog
-    const SYMW = /^[^\p{L}\p{N}]{1,3}$/u;                                              // lösa tecken från brus, t.ex. \ eller _
+    const SEP = /^[-–—‒=:→|_~]+$/;
+    const SYMW = /^[^\p{L}\p{N}]{1,3}$/u;
     const join = a => {
       const b = a.slice();
       while (b.length > 1 && SYMW.test(b[b.length - 1].t)) b.pop();
       while (b.length > 1 && SYMW.test(b[0].t)) b.shift();
       return b.map(w => w.t).join(' ');
     };
-    // Först de rader som har en tydlig lucka vid kolumngränsen (eller ett streck). Högerkolumnens startläge hämtas från dem.
     const cuts = lines.map(l => {
       const i = l.w.findIndex(w => SEP.test(w.t));
       if (i > 0 && i < l.w.length - 1) return { i, sep: true };
@@ -558,7 +580,7 @@
     let skipped = 0;
     lines.forEach((l, n) => {
       let c = cuts[n];
-      if (!c && bx !== null && xR) {      // trång lucka, men ordet börjar där högerkolumnen börjar
+      if (!c && bx !== null && xR) {
         const k = l.w.findIndex((w, m) => m > 0 && Math.abs(w.x0 - xR) <= 0.6 * H && w.x0 - l.w[m - 1].x1 >= 0.2 * H);
         if (k > 0) c = { i: k };
       }
@@ -590,7 +612,7 @@
       try { data = (await worker.recognize(canvas, {}, { blocks: true })).data; }
       finally { await worker.terminate(); }
       const { rows, skipped } = rowsFromWords(wordsOf(data));
-      fromRows(rows, false);                                                        // bildläsning kan göra fel: starta inte automatiskt
+      fromRows(rows, false);
       if (!warn.textContent) warn.textContent = 'Kontrollera glosorna (bildläsning kan göra fel) och tryck Börja plugga.' + (skipped ? ` ${skipped} ${skipped === 1 ? 'rad' : 'rader'} som inte såg ut som glosor hoppades över.` : '');
     } catch (e) {
       study.hidden = true; edit.hidden = false; update();
