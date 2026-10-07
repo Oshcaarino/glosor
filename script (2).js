@@ -256,18 +256,16 @@
   document.addEventListener('keydown', e => {
     if (study.hidden || spelling() || e.ctrlKey || e.metaKey || e.altKey) return;
     const tag = e.target.tagName;
-    if (e.key === 'Enter' && !/^(BUTTON|A|SELECT|INPUT|TEXTAREA)$/.test(tag)) {
-      e.preventDefault(); flip();
-    } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !/^(INPUT|SELECT|TEXTAREA)$/.test(tag)) {
+    if (e.key === 'Enter' && !/^(BUTTON|A|SELECT|INPUT|TEXTAREA)$/.test(tag)) {       e.preventDefault(); flip();     } else if ((e.key === 'ArrowRight' \vert{}\vert{} e.key === 'ArrowLeft') && !/^(INPUT\vert{}SELECT\vert{}TEXTAREA)$/.test(tag)) {
       e.preventDefault(); answer(e.key === 'ArrowRight');
     }
   });
 
   /* ---------- Ladda upp Excel (.xlsx) eller CSV ---------- */
   // Filen läses helt i webbläsaren och skickas inte någonstans.
-  const fileIn = $('file'), uploadBtn = $('upload');
+  const fileIn = $('file'), uploadBtn =$('upload');
   const fail = m => { throw Object.assign(new Error(m), { user: true }); };
-  const tags = (el, name) => Array.from(el.getElementsByTagNameNS('*', name));
+  const tags = (el, name) => Array.from(el.querySelectorAll ? el.querySelectorAll(name) : el.getElementsByTagNameNS('*', name));
   const xml = s => new DOMParser().parseFromString(s, 'text/xml');
   const colNo = ref => ref.replace(/[^A-Za-z]/g, '').toUpperCase().split('').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
   const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
@@ -419,7 +417,7 @@
 
   /* ---------- Ladda upp bild (textläsning med Tesseract.js) ---------- */
   // Textläsaren hämtas först när man laddar upp en bild. Själva bilden lämnar aldrig webbläsaren.
-  const imgIn = $('img'), imgBtn = $('imgbtn');
+  const imgIn = $('img'), imgBtn =$('imgbtn');
   const TESS = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
   const OCR_LANG = { svenska: 'swe', engelska: 'eng', tyska: 'deu', franska: 'fra', spanska: 'spa', italienska: 'ita', latin: 'lat', finska: 'fin', danska: 'dan', norska: 'nor', portugisiska: 'por', holländska: 'nld', nederländska: 'nld', polska: 'pol', ryska: 'rus', turkiska: 'tur' };
   const isImage = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(f.name);
