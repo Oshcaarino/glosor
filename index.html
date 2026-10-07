@@ -33,7 +33,20 @@
     #gut { width: 45px; background: #f1f5f9; border-right: 1px solid var(--border); overflow: hidden; font-family: monospace; font-size: 14px; color: #94a3b8; text-align: right; padding: 12px 8px; user-select: none; }
     #t { flex: 1; border: none; resize: none; outline: none; font-family: monospace; font-size: 14px; line-height: 1.5; padding: 12px; white-space: pre; overflow-x: auto; }
     #tint { position: absolute; top: 0; bottom: var(--sb, 0px); right: 0; background: rgba(37, 99, 235, 0.04); pointer-events: none; }
-    #split { position: absolute; top: 0; bottom: var(--sb, 0px); width: 4px; background: var(--primary); cursor: col-resize; z-index: 10; }
+    
+    /* Flyttbar röda/blå linje */
+    #split { 
+      position: absolute; 
+      top: 0; 
+      bottom: var(--sb, 0px); 
+      width: 10px; 
+      margin-left: -5px; 
+      background: var(--primary); 
+      cursor: col-resize; 
+      z-index: 10; 
+      touch-action: none; 
+      user-select: none; 
+    }
     #split.drag { background: #1e40af; }
 
     .controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; }
@@ -65,18 +78,12 @@
     <header>
       <input type="text" id="n1" placeholder="Språk 1" value="Svenska">
       <input type="text" id="n2" placeholder="Språk 2" value="Engelska">
-      <button id="upload" type="button" class="btn-sec">Ladda upp Excel</button>
-      <button id="imgbtn" type="button" class="btn-sec">Ladda upp Bild</button>
       <button id="centerBtn" type="button" class="btn-sec">Centrera linjen</button>
-      
-      <!-- Dolda inputs för filuppladdning -->
-      <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt" style="display: none;">
-      <input type="file" id="img" accept="image/*" style="display: none;">
     </header>
 
     <div id="pane">
       <div id="gut"><div>1</div></div>
-      <textarea id="t" spellcheck="false" placeholder="Skriv glosor här eller ladda upp en fil..."></textarea>
+      <textarea id="t" spellcheck="false" placeholder="Skriv glosor här, till exempel:&#10;hund    dog&#10;katt    cat"></textarea>
       <div id="tint"></div>
       <div id="split" role="slider" aria-label="Kolumndelare" tabindex="0"></div>
     </div>
@@ -124,8 +131,6 @@
     </div>
   </div>
 
-  <!-- Inläsning av JavaScript-filer -->
-  <script src="underhall.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
