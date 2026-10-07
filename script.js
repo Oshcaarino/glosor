@@ -46,7 +46,7 @@
       if (!v1 && !v2) continue;
 
       if (!v1 || !v2) {
-        if (!problem) problem = `Rad ${i + 1} saknar ord på ena sidan`;
+        if (!problem) problem = `Rad ${i + 1} saknar ord i en av rutorna`;
       } else {
         pairs.push([v1, v2]);
       }
@@ -63,35 +63,7 @@
     save();
   }
 
-  /* Autokoppling vid inklistring av tabell/två kolumner i vänstra rutan */
-  t1.addEventListener('paste', e => {
-    const raw = (e.clipboardData || window.clipboardData).getData('text');
-    if (!raw) return;
-
-    if (raw.includes('\t') || /\S\s{2,}\S/.test(raw)) {
-      e.preventDefault();
-      const rows1 = [], rows2 = [];
-      raw.replace(/\r\n?/g, '\n').split('\n').forEach(line => {
-        let parts = line.split('\t');
-        if (parts.length < 2) {
-          const m = /^(\S.*?)\s{2,}(\S.*)$/.exec(line.trim());
-          if (m) parts = [m[1], m[2]];
-        }
-        if (parts.length >= 2) {
-          rows1.push(parts[0].trim());
-          rows2.push(parts.slice(1).join(' ').trim());
-        } else {
-          rows1.push(line.trim());
-          rows2.push('');
-        }
-      });
-      t1.value = rows1.join('\n');
-      t2.value = rows2.join('\n');
-      update();
-    }
-  });
-
-  /* Synka scroll mellan rutorna */
+  /* Synkronisera scrollning mellan rutorna */
   let isScrolling = false;
   t1.addEventListener('scroll', () => {
     if (!isScrolling) {
