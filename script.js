@@ -1,79 +1,61 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const ta = $('t'), gut = $('gut'), gutIn = gut.firstElementChild, pane =$('pane'),
-    tint = $('tint'), split = $('split'), n1 =$('n1'), n2 = $('n2'), count =$('c'),
-    warn = $('warn'), startBtn =$('start'), edit = $('edit'), study =$('study'),
-    backBtn = $('back'), prog =$('prog'), modeSel = $('mode'), alang =$('alang'),
-    swapBtn = $('swap'), shuffleBtn =$('shuffle'), card = $('card'), lab =$('lab'),
-    face = $('face'), grade =$('grade'), noBtn = $('no'), yesBtn =$('yes'),
-    spellBox = $('spell'), ans =$('ans'), checkBtn = $('check'), fb =$('fb'),
-    centerBtn = $('centerBtn');
+  const t1 = $('t1'), t2 =$('t2'), n1 = $('n1'), n2 =$('n2'),
+    count = $('c'), warn = $('warn'), startBtn =$('start'),
+    edit = $('edit'), study = $('study'), backBtn =$('back'),
+    prog = $('prog'), modeSel = $('mode'), alang =$('alang'),
+    swapBtn = $('swap'), shuffleBtn = $('shuffle'), card =$('card'),
+    lab = $('lab'), face = $('face'), grade =$('grade'),
+    noBtn = $('no'), yesBtn = $('yes'), spellBox =$('spell'),
+    ans = $('ans'), checkBtn = $('check'), fb =$('fb');
 
-  const KEY = 'glosor', PAD = 12;
-  let col = 12;                       // linjens läge, i tecken från vänsterkanten
+  const KEY = 'glosor_2rutor';
   let all = [], queue = [], total = 0;
-  let q = 0;                          // vilket språk som visas först (0 = vänster)
+  let q = 0; // 0 = språk 1 visas först
   let flipped = false, waiting = false;
 
   /* ---------- Spara och läsa ---------- */
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || '{}');
-    if (typeof s.text === 'string') ta.value = s.text;
-    if (Number.isInteger(s.col) && s.col > 0) col = s.col;
+    if (s.t1) t1.value = s.t1;
+    if (s.t2) t2.value = s.t2;
     if (s.n1) n1.value = s.n1;
     if (s.n2) n2.value = s.n2;
   } catch (e) {}
 
   const save = () => {
-    try { localStorage.setItem(KEY, JSON.stringify({ text: ta.value, col, n1: n1.value, n2: n2.value })); } catch (e) {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        t1: t1.value, t2: t2.value, n1: n1.value, n2: n2.value
+      }));
+    } catch (e) {}
   };
 
-  /* ---------- Rutan med linjen ---------- */
-  const probe = document.createElement('span');
-  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none';
-  pane.appendChild(probe);
-  const charW = () => {
-    const cs = getComputedStyle(ta);
-    probe.style.fontFamily = cs.fontFamily;
-    probe.style.fontSize = cs.fontSize;
-    probe.textContent = '0'.repeat(100);
-    return probe.getBoundingClientRect().width / 100 || 9;
-  };
-  const maxCol = () => ta.value.split('\n').reduce((m, l) => Math.max(m, l.length + 10), 30);
-
+  /* ---------- Läsa av glosor ---------- */
   function parse() {
+    const lines1 = t1.value.split('\n');
+    const lines2 = t2.value.split('\n');
+    const maxLen = Math.max(lines1.length, lines2.length);
     const pairs = [];
     let problem = '';
-    ta.value.split('\n').forEach((raw, i) => {
-      const line = raw.replace(/\r$/, '');
-      if (!line.trim()) return;
-      const l = line.slice(0, col).trim(), r = line.slice(col).trim();
-      if (!problem) {
-        if (!l || !r) problem = `Rad ${i + 1} saknar ord på ena sidan`;
-        else if (/\S/.test(line[col - 1] || '') && /\S/.test(line[col] || '')) problem = `Rad ${i + 1}: linjen går genom ett ord`;
+
+    for (let i = 0; i < maxLen; i++) {
+      const v1 = (lines1[i] || '').trim();
+      const v2 = (lines2[i] || '').trim();
+
+      if (!v1 && !v2) continue;
+
+      if (!v1 || !v2) {
+        if (!problem) problem = `Rad ${i + 1} saknar ord på ena sidan`;
+      } else {
+        pairs.push([v1, v2]);
       }
-      if (l && r) pairs.push([l, r]);
-    });
+    }
+
     return { pairs, problem };
   }
 
-  function place() {
-    const x = PAD + col * charW() - ta.scrollLeft;
-    split.style.left = x + 'px';
-    tint.style.left = Math.max(0, x) + 'px';
-    split.setAttribute('aria-valuemin', 1);
-    split.setAttribute('aria-valuemax', maxCol());
-    split.setAttribute('aria-valuenow', col);
-  }
-
   function update() {
-    const n = ta.value.split('\n').length;
-    gutIn.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
-    const sb = ta.offsetHeight - ta.clientHeight;
-    pane.style.setProperty('--sb', sb + 'px');
-    gutIn.style.paddingBottom = PAD + sb + 'px';
-    gut.scrollTop = ta.scrollTop;
-    place();
     const { pairs, problem } = parse();
     count.textContent = pairs.length ? `${pairs.length} ${pairs.length === 1 ? 'glosa' : 'glosor'}` : '';
     warn.textContent = problem;
@@ -81,141 +63,58 @@
     save();
   }
 
-  function setCol(c) {
-    c = Math.min(Math.max(1, c), maxCol());
-    if (c !== col) { col = c; update(); }
-  }
-
-  /* ---------- Centrera linjen automatisk ---------- */
-  function centerLine() {
-    const lines = ta.value.split('\n').filter(l => l.trim());
-    if (!lines.length) {
-      setCol(12);
-      return;
-    }
-
-    let maxLeft = 0;
-    let minRight = Infinity;
-
-    lines.forEach(l => {
-      let m = /^(\S.*?)\s{2,}(\S.*)$/.exec(l);
-      if (!m) m = /^(\S+)\s+(\S.*)$/.exec(l);
-
-      if (m) {
-        const leftLen = m[1].length;
-        const rightStart = l.length - m[2].length;
-        maxLeft = Math.max(maxLeft, leftLen);
-        minRight = Math.min(minRight, rightStart);
-      }
-    });
-
-    if (maxLeft > 0 && minRight < Infinity && minRight > maxLeft) {
-      setCol(Math.floor((maxLeft + minRight) / 2));
-    } else if (maxLeft > 0) {
-      setCol(maxLeft + 2);
-    } else {
-      setCol(12);
-    }
-  }
-
-  if (centerBtn) {
-    centerBtn.addEventListener('click', centerLine);
-  }
-
-  const expand = l => {
-    let o = '';
-    for (const ch of l) o += ch === '\t' ? ' '.repeat(8 - (o.length % 8)) : ch;
-    return o;
-  };
-
-  function guess(lines) {
-    let minR = Infinity;
-    for (const l of lines) {
-      const m = /^(\s*\S.*?)(\s{2,})\S/.exec(l);
-      if (m) minR = Math.min(minR, m[1].length + m[2].length);
-    }
-    if (minR === Infinity) {
-      for (const l of lines) {
-        const m = /^(\s*\S+)(\s+)\S+$/.exec(l);
-        if (m) minR = Math.min(minR, m[1].length + m[2].length);
-      }
-    }
-    return minR === Infinity ? null : Math.max(1, minR - 1);
-  }
-
-  ta.addEventListener('paste', e => {
+  /* Autokoppling vid inklistring av tabell/två kolumner i vänstra rutan */
+  t1.addEventListener('paste', e => {
     const raw = (e.clipboardData || window.clipboardData).getData('text');
     if (!raw) return;
-    e.preventDefault();
-    const wasEmpty = !ta.value.trim();
-    let lines = raw.replace(/\r\n?/g, '\n').replace(/\n+$/, '').split('\n');
-    if (lines.some(l => l.includes('\t'))) {
-      const rows = lines.map(l => l.split('\t'));
-      const w = Math.max(...rows.map(r => r[0].length));
-      const start = wasEmpty || w >= col ? w + 3 : col + 1;
-      lines = rows.map(r => (r.length < 2 ? r[0] : r[0].padEnd(start) + r.slice(1).join(' ').trim()));
-      if (wasEmpty) col = start - 1;
-    } else {
-      lines = lines.map(expand);
-      if (wasEmpty) { const g = guess(lines); if (g) col = g; }
+
+    if (raw.includes('\t') || /\S\s{2,}\S/.test(raw)) {
+      e.preventDefault();
+      const rows1 = [], rows2 = [];
+      raw.replace(/\r\n?/g, '\n').split('\n').forEach(line => {
+        let parts = line.split('\t');
+        if (parts.length < 2) {
+          const m = /^(\S.*?)\s{2,}(\S.*)$/.exec(line.trim());
+          if (m) parts = [m[1], m[2]];
+        }
+        if (parts.length >= 2) {
+          rows1.push(parts[0].trim());
+          rows2.push(parts.slice(1).join(' ').trim());
+        } else {
+          rows1.push(line.trim());
+          rows2.push('');
+        }
+      });
+      t1.value = rows1.join('\n');
+      t2.value = rows2.join('\n');
+      update();
     }
-    const text = lines.join('\n');
-    ta.focus();
-    if (!document.execCommand || !document.execCommand('insertText', false, text)) {
-      ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, 'end');
-    }
-    update();
   });
 
-  ta.addEventListener('input', update);
-  ta.addEventListener('scroll', () => { gut.scrollTop = ta.scrollTop; place(); });
-  [n1, n2].forEach(i => i.addEventListener('input', save));
-  window.addEventListener('resize', update);
-
-  /* ---------- Dra linjen med mus, touch eller penna ---------- */
-  let isDragging = false;
-
-  const startDrag = e => {
-    e.preventDefault();
-    isDragging = true;
-    split.classList.add('drag');
-    split.focus();
-    if (e.pointerId !== undefined && split.setPointerCapture) {
-      try { split.setPointerCapture(e.pointerId); } catch (err) {}
+  /* Synka scroll mellan rutorna */
+  let isScrolling = false;
+  t1.addEventListener('scroll', () => {
+    if (!isScrolling) {
+      isScrolling = true;
+      t2.scrollTop = t1.scrollTop;
+      setTimeout(() => isScrolling = false, 50);
     }
-  };
-
-  const moveDrag = e => {
-    if (!isDragging) return;
-    const rect = pane.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    setCol(Math.round((x + ta.scrollLeft - PAD) / charW()));
-  };
-
-  const stopDrag = e => {
-    if (!isDragging) return;
-    isDragging = false;
-    split.classList.remove('drag');
-    if (e.pointerId !== undefined && split.releasePointerCapture) {
-      try { split.releasePointerCapture(e.pointerId); } catch (err) {}
-    }
-  };
-
-  split.addEventListener('pointerdown', startDrag);
-  window.addEventListener('pointermove', moveDrag);
-  window.addEventListener('pointerup', stopDrag);
-  window.addEventListener('pointercancel', stopDrag);
-
-  // Flytta linjen med piltangenterna
-  split.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') { e.preventDefault(); setCol(col - 1); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); setCol(col + 1); }
   });
+  t2.addEventListener('scroll', () => {
+    if (!isScrolling) {
+      isScrolling = true;
+      t1.scrollTop = t2.scrollTop;
+      setTimeout(() => isScrolling = false, 50);
+    }
+  });
+
+  [t1, t2, n1, n2].forEach(el => el.addEventListener('input', update));
 
   /* ---------- Plugga ---------- */
   const nm = i => (i ? n2 : n1).value.trim() || `Språk ${i + 1}`;
   const norm = s => s.normalize('NFC').trim().toLowerCase().replace(/\s+/g, ' ');
   const spelling = () => modeSel.value === 'spell';
+
   const shuffleArr = a => {
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -223,6 +122,7 @@
     }
     return a;
   };
+
   const deal = () => { queue = shuffleArr(all.slice()); total = queue.length; };
   const later = c => queue.splice(Math.min(queue.length, 4), 0, c);
   const focusMain = () => { if (spelling()) ans.focus(); else card.focus({ preventScroll: true }); };
@@ -317,5 +217,4 @@
   });
 
   update();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(update);
 })();
