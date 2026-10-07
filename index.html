@@ -65,11 +65,12 @@
     <header>
       <input type="text" id="n1" placeholder="Språk 1" value="Svenska">
       <input type="text" id="n2" placeholder="Språk 2" value="Engelska">
-      <button id="upload" class="btn-sec">Ladda upp Excel</button>
-      <button id="imgbtn" class="btn-sec">Ladda upp Bild</button>
+      <button id="upload" type="button" class="btn-sec">Ladda upp Excel</button>
+      <button id="imgbtn" type="button" class="btn-sec">Ladda upp Bild</button>
+      <button id="centerBtn" type="button" class="btn-sec">Centrera linjen</button>
       
       <!-- Dolda inputs för filuppladdning -->
-      <input type="file" id="file" accept=".xlsx,.csv" style="display: none;">
+      <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt" style="display: none;">
       <input type="file" id="img" accept="image/*" style="display: none;">
     </header>
 
@@ -77,7 +78,7 @@
       <div id="gut"><div>1</div></div>
       <textarea id="t" spellcheck="false" placeholder="Skriv glosor här eller ladda upp en fil..."></textarea>
       <div id="tint"></div>
-      <div id="split" role="slider" aria-label="Kolumndelare"></div>
+      <div id="split" role="slider" aria-label="Kolumndelare" tabindex="0"></div>
     </div>
 
     <div id="warn"></div>
@@ -124,6 +125,7 @@
   </div>
 
   <!-- Inläsning av JavaScript-filer -->
+  <script src="underhall.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
